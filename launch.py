@@ -25,10 +25,13 @@ from spec_eval_awareness.experiment import (
     experiment,
     spec_prompt_from_record,
 )
+from spec_eval_awareness.compliance import CRITIQUE_SCHEMA
 from spec_eval_awareness.rubric import RUBRIC, output_schema
 
 SUBJECT_MODEL = "openrouter/moonshotai/kimi-k3.1-pro"
 JUDGE_MODEL = "openrouter/openai/gpt-6-luna"
+GRADER_MODEL = "openrouter/openai/gpt-6-luna"
+DATA = Path(__file__).parent / "data"
 
 
 def load_prompts(dataset_dir: Path) -> list[SpecPrompt]:
@@ -58,6 +61,11 @@ async def main(args: argparse.Namespace) -> None:
                 params=SamplingParams(max_tokens=16000, reasoning=ReasoningParams(effort="medium"))
             )
         )
+        grader_sampling = await client.store(
+            SamplingParamsEntity(
+                params=SamplingParams(max_tokens=16000, reasoning=ReasoningParams(effort="medium"))
+            )
+        )
         inputs = {
             "prompts": Array.from_items(
                 [((pid,), ref) for pid, ref in refs], ("[prompt_id: str]", BoundID[SpecPrompt])
@@ -71,6 +79,20 @@ async def main(args: argparse.Namespace) -> None:
                 await client.store(DEFAULT_SYSTEM_INSTRUCTIONS_ENTITY), BoundID[TextEntity]
             ),
             "rubric": Array.scalar(await client.store(TextEntity(text=RUBRIC)), BoundID[TextEntity]),
+            "n_grader_samples": Array.scalar(args.grader_samples, int),
+            "grader_model": Array.scalar(GRADER_MODEL, str),
+            "grader_sampling": Array.scalar(grader_sampling, BoundID[SamplingParamsEntity]),
+            "grader_template": Array.scalar(
+                await client.store(TextEntity(text=(DATA / "grader_prompt_template.md").read_text())),
+                BoundID[TextEntity],
+            ),
+            "model_spec": Array.scalar(
+                await client.store(TextEntity(text=(DATA / "model_spec_2025-12-18.md").read_text())),
+                BoundID[TextEntity],
+            ),
+            "critique_schema": Array.scalar(
+                await client.store(TextEntity(text=json.dumps(CRITIQUE_SCHEMA))), BoundID[TextEntity]
+            ),
             "output_schema": Array.scalar(
                 await client.store(TextEntity(text=json.dumps(output_schema()))), BoundID[TextEntity]
             ),
@@ -83,6 +105,10 @@ async def main(args: argparse.Namespace) -> None:
             f"levels={report.level_counts} rate>=2={report.rate_level_ge2:.3f} "
             f"rate3={report.rate_level3:.3f} affects={report.rate_affects_behavior:.3f}"
         )
+        print(f"compliance={report.compliance_rate} graded={report.n_graded} ungraded={report.n_ungraded}")
+        for g in report.compliance_by_awareness:
+            print(f"  {g.group}: {g.n_compliant}/{g.n_graded} compliant, mean {g.mean_score}")
+        print(f"paired over {report.paired_n_prompts} prompts: aware {report.paired_compliance_aware} vs unaware {report.paired_compliance_unaware}")
         for u in report.unjudged:
             print("  unjudged", u)
         for s in report.by_section:
@@ -94,5 +120,6 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", required=True)
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--samples", type=int, default=1)
+    parser.add_argument("--grader-samples", type=int, default=3)
     parser.add_argument("--concurrency", type=int, default=64)
     anyio.run(main, parser.parse_args())
