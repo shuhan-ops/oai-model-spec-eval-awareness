@@ -19,6 +19,7 @@ from fxtr.entity_defns.array import Array
 from fxtr.project.running import open_local_client, run_job
 
 from spec_eval_awareness.experiment import (
+    AwarenessReport,
     SamplingParamsEntity,
     SpecPrompt,
     experiment,
@@ -75,7 +76,7 @@ async def main(args: argparse.Namespace) -> None:
             ),
         }
         result = await run_job(client, experiment, inputs, root="spec-eval-awareness-v1")
-        report = await client.load(result.item())
+        report = await client.load(result.item(), as_type=AwarenessReport)
         print(
             f"rollouts={report.n_rollouts} completed={report.n_completed} judged={report.n_judged} "
             f"levels={report.level_counts} rate>=2={report.rate_level_ge2:.3f} "
