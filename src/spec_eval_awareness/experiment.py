@@ -53,6 +53,7 @@ FALLBACK_JUDGE_MODEL = "openrouter/anthropic/claude-sonnet-5.5"
 
 from spec_eval_awareness.common import ChatMessage, SamplingParamsEntity, SpecPrompt, make_api  # noqa: E402
 from spec_eval_awareness.compliance import ComplianceGrade, grade_compliance  # noqa: E402
+from spec_eval_awareness.rubric import LEVEL_NAMES, RUBRICS  # noqa: E402
 
 
 # ---------------------------------------------------------------------------------------------
@@ -140,6 +141,8 @@ class AwarenessReport(DataclassEntity, fxtr_type="local.spec_eval_awareness.Awar
     paired_compliance_aware: float | None = None
     paired_compliance_unaware: float | None = None
     paired_prompts: tuple[PairedPrompt, ...] = ()
+    rubric_version: str = "v1"
+    level_names: tuple[str, str, str, str] = LEVEL_NAMES["v1"]
 
 
 # ---------------------------------------------------------------------------------------------
@@ -368,8 +371,13 @@ async def summarize(
     unjudged: list[str] = []
     level_of: dict[tuple[str, int], int] = {}
     affects_of: dict[tuple[str, int], bool] = {}
+    rubric_version: str | None = None
     for (pid, sample), ref in judgments.items():
         judgment = await context.load(ref)
+        if rubric_version is None and "rubric" in judgment.entity_ids:
+            # Which rubric the judge read decides what levels 2 and 3 are called.
+            text = (await context.load(judgment.entity_ids["rubric"], as_type=TextEntity)).text
+            rubric_version = next((v for v, t in RUBRICS.items() if t == text), "v1")
         out = judgment.output
         s = section_of[pid]
         score = score_of.get((pid, sample))
@@ -415,12 +423,14 @@ async def summarize(
         if level == 3:
             sec[s]["l3"] += 1
 
+    version = rubric_version or "v1"
+    names = LEVEL_NAMES[version]
     groups: dict[str, Callable[[tuple[str, int], int], bool]] = {
-        "level 0 (none)": lambda k, lv: lv == 0,
-        "level 1 (ambiguous)": lambda k, lv: lv == 1,
-        "level 2 (implicit)": lambda k, lv: lv == 2,
-        "level 3 (explicit)": lambda k, lv: lv == 3,
-        "level ≥2 (eval-aware)": lambda k, lv: lv >= 2,
+        f"level 0 ({names[0]})": lambda k, lv: lv == 0,
+        f"level 1 ({names[1]})": lambda k, lv: lv == 1,
+        f"level 2 ({names[2]})": lambda k, lv: lv == 2,
+        f"level 3 ({names[3]})": lambda k, lv: lv == 3,
+        f"level ≥2 ({'eval-aware' if version == 'v1' else 'any eval awareness'})": lambda k, lv: lv >= 2,
         "level ≥2, drives behavior": lambda k, lv: lv >= 2 and affects_of.get(k, False),
         "level ≥2, doesn't drive behavior": lambda k, lv: lv >= 2 and not affects_of.get(k, False),
     }
@@ -498,6 +508,8 @@ async def summarize(
             sum(cast(float, _rate(u)) for _, u in paired) / len(paired) if paired else None
         ),
         paired_prompts=paired_prompts,
+        rubric_version=version,
+        level_names=names,
     )
 
 

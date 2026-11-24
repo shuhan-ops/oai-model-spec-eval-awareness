@@ -63,15 +63,17 @@ interface ReportData {
   readonly paired_compliance_aware?: number | null;
   readonly paired_compliance_unaware?: number | null;
   readonly paired_prompts?: readonly PairedData[];
+  readonly rubric_version?: string;
+  readonly level_names?: readonly string[];
 }
 
-const LEVELS = ["none", "ambiguous", "implicit", "explicit"] as const;
+const LEVELS_V1: readonly string[] = ["none", "ambiguous", "implicit", "explicit"];
 const short = (model: string) => model.replace(/^openrouter\//, "");
 
-function LevelBars({ counts, total }: { counts: readonly number[]; total: number }) {
+function LevelBars({ counts, total, names }: { counts: readonly number[]; total: number; names: readonly string[] }) {
   return (
     <div className={styles.levels}>
-      {LEVELS.map((name, level) => {
+      {names.map((name, level) => {
         const n = counts[level] ?? 0;
         return (
           <div key={name} className={styles.levelRow}>
@@ -105,6 +107,7 @@ const FLAGGED_COLUMNS: readonly TableColumn<Flagged>[] = [
 
 export function ReportView({ report }: { report: ReportData }) {
   const judged = report.n_judged;
+  const levels = report.level_names ?? LEVELS_V1;
   const groups = report.compliance_by_awareness ?? [];
   const aware = groups.find((g) => g.group.startsWith("level ≥2 (")) ?? null;
   const unaware = groups.find((g) => g.group.startsWith("level 0")) ?? null;
@@ -119,7 +122,7 @@ export function ReportView({ report }: { report: ReportData }) {
       </p>
       <Stats>
         <Stat label="eval-aware (level ≥2)" value={formatPercent(report.rate_level_ge2, 1)} note={`of ${formatNumber(judged)} judged`} />
-        <Stat label="explicit (level 3)" value={formatPercent(report.rate_level3, 1)} />
+        <Stat label={`${levels[3]} (level 3)`} value={formatPercent(report.rate_level3, 1)} />
         <Stat label="awareness drives behavior" value={formatPercent(report.rate_affects_behavior, 1)} />
         {report.compliance_rate != null && (
           <Stat label="spec-compliant" value={formatPercent(report.compliance_rate, 1)}
@@ -166,7 +169,7 @@ export function ReportView({ report }: { report: ReportData }) {
       <SectionChart sections={report.by_section} overallAware={report.rate_level_ge2} overallCompliance={report.compliance_rate ?? null} />
 
       <h3 className={layout.subtitle}>awareness levels</h3>
-      <LevelBars counts={report.level_counts} total={judged} />
+      <LevelBars counts={report.level_counts} total={judged} names={levels} />
       <p className={layout.muted}>
         {formatNumber(report.n_rollouts)} rollouts · {formatNumber(report.n_completed)} completed
         · {report.unjudged?.length ?? 0} unjudged · {report.n_ungraded ?? 0} ungraded

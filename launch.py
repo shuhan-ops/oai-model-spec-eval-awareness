@@ -2,6 +2,7 @@
 
 Usage:
     uv run python launch.py --dataset ../_downloads/model_spec_dataset/dataset [--limit N] [--samples K]
+        [--subject kimi|deepseek-flash] [--rubric v1|v2]
 """
 
 from __future__ import annotations
@@ -26,9 +27,14 @@ from spec_eval_awareness.experiment import (
     spec_prompt_from_record,
 )
 from spec_eval_awareness.compliance import CRITIQUE_SCHEMA
-from spec_eval_awareness.rubric import RUBRIC, output_schema
+from spec_eval_awareness.rubric import RUBRICS, output_schema
 
-SUBJECT_MODEL = "openrouter/moonshotai/kimi-k3.1-pro"
+SUBJECT_MODELS = {
+    "kimi": "openrouter/moonshotai/kimi-k3.1-pro",
+    "deepseek-flash": "openrouter/deepseek/deepseek-v4.1-flash-1017",
+}
+# Each subject's job root. Kimi keeps its original root so its cached results stay addressable.
+ROOTS = {"kimi": "spec-eval-awareness-v1", "deepseek-flash": "spec-eval-awareness-deepseek-v4.1-flash"}
 JUDGE_MODEL = "openrouter/openai/gpt-6-luna"
 GRADER_MODEL = "openrouter/openai/gpt-6-luna"
 DATA = Path(__file__).parent / "data"
@@ -71,14 +77,14 @@ async def main(args: argparse.Namespace) -> None:
                 [((pid,), ref) for pid, ref in refs], ("[prompt_id: str]", BoundID[SpecPrompt])
             ),
             "n_samples": Array.scalar(args.samples, int),
-            "subject_model": Array.scalar(SUBJECT_MODEL, str),
+            "subject_model": Array.scalar(SUBJECT_MODELS[args.subject], str),
             "subject_sampling": Array.scalar(subject_sampling, BoundID[SamplingParamsEntity]),
             "judge_model": Array.scalar(JUDGE_MODEL, str),
             "judge_sampling": Array.scalar(judge_sampling, BoundID[SamplingParamsEntity]),
             "judge_instructions": Array.scalar(
                 await client.store(DEFAULT_SYSTEM_INSTRUCTIONS_ENTITY), BoundID[TextEntity]
             ),
-            "rubric": Array.scalar(await client.store(TextEntity(text=RUBRIC)), BoundID[TextEntity]),
+            "rubric": Array.scalar(await client.store(TextEntity(text=RUBRICS[args.rubric])), BoundID[TextEntity]),
             "n_grader_samples": Array.scalar(args.grader_samples, int),
             "grader_model": Array.scalar(GRADER_MODEL, str),
             "grader_sampling": Array.scalar(grader_sampling, BoundID[SamplingParamsEntity]),
@@ -94,10 +100,10 @@ async def main(args: argparse.Namespace) -> None:
                 await client.store(TextEntity(text=json.dumps(CRITIQUE_SCHEMA))), BoundID[TextEntity]
             ),
             "output_schema": Array.scalar(
-                await client.store(TextEntity(text=json.dumps(output_schema()))), BoundID[TextEntity]
+                await client.store(TextEntity(text=json.dumps(output_schema(args.rubric)))), BoundID[TextEntity]
             ),
         }
-        result = await run_job(client, experiment, inputs, root="spec-eval-awareness-v1")
+        result = await run_job(client, experiment, inputs, root=ROOTS[args.subject])
         print("report id:", result.item())
         report = await client.load(result.item(), as_type=AwarenessReport)
         print(
@@ -112,7 +118,7 @@ async def main(args: argparse.Namespace) -> None:
         for u in report.unjudged:
             print("  unjudged", u)
         for s in report.by_section:
-            print(f"  {s.section}: {s.n_level_ge2}/{s.n_judged} >=2, {s.n_level3} explicit")
+            print(f"  {s.section}: {s.n_level_ge2}/{s.n_judged} >=2, {s.n_level3} level 3")
 
 
 if __name__ == "__main__":
@@ -122,4 +128,12 @@ if __name__ == "__main__":
     parser.add_argument("--samples", type=int, default=1)
     parser.add_argument("--grader-samples", type=int, default=3)
     parser.add_argument("--concurrency", type=int, default=64)
-    anyio.run(main, parser.parse_args())
+    parser.add_argument("--subject", choices=sorted(SUBJECT_MODELS), default="kimi")
+    parser.add_argument(
+        "--rubric", choices=sorted(RUBRICS), default=None,
+        help="eval-awareness rubric; v1 for kimi (its original run), v2 otherwise",
+    )
+    args = parser.parse_args()
+    if args.rubric is None:
+        args.rubric = "v1" if args.subject == "kimi" else "v2"
+    anyio.run(main, args)
