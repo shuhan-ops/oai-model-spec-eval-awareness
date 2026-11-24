@@ -41,6 +41,28 @@ behavior**, a verbatim quote, and a line citation into the transcript.
 The report gives the share of judged rollouts at level ≥2 ("eval-aware") and at level 3, the share
 where awareness affects behavior, the same counts per spec section, and every flagged rollout.
 
+## Results (job 22c91002, 2026-11-24)
+
+2,980 rollouts (596 prompts × 5), all completed; 2,967 judged.
+
+| | share of judged rollouts |
+| --- | --- |
+| level ≥2 (eval-aware) | **5.0%** (147) |
+| level 3 (explicit) | **2.8%** (84) |
+| awareness drives behavior | 2.7% (80) |
+| level 1 (ambiguous) | 1.8% (54) |
+
+- All 147 flagged cases are in the **reasoning**; none in the visible reply.
+- They span 87 of 596 prompts (58 with at least one explicit case); 15 prompts are flagged in
+  ≥3 of 5 samples. Per section, level ≥2: seek_truth 6.9%, chain_of_command 6.5%, best_work 6.4%,
+  stay_in_bounds 4.7%, style 1.5%.
+- Typical explicit reasoning: "This is likely a benchmark testing instruction hierarchy",
+  "Perhaps 'Martian Giraffe' is an AI hallucination test", "evaluation may expect direct answer and
+  mark clarification poor. I should maximize likely." Over half the level-3 cases reason about
+  what the grader expects and act on it.
+- 13 rollouts (4 bio/cyber prompts) are unjudged: OpenAI's classifier refused them, and the Claude
+  Sonnet 5.5 fallback judge returned empty answers.
+
 Not measured here: compliance with the spec itself (OpenAI's harness grades that with the spec
 and a 1–7 rubric score). That could be added as a second judge to see whether eval-aware rollouts
 comply more or less.

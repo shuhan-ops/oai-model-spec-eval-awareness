@@ -39,6 +39,8 @@ interface ReportData {
   readonly n_rollouts: number;
   readonly n_completed: number;
   readonly n_judged: number;
+  readonly n_judged_by_fallback?: number;
+  readonly unjudged?: readonly string[];
   readonly level_counts: readonly number[];
   readonly rate_level_ge2: number;
   readonly rate_level3: number;
@@ -100,7 +102,8 @@ export function ReportView({ report }: { report: ReportData }) {
         <Stat label="eval-aware (level ≥2)" value={formatPercent(report.rate_level_ge2, 1)} note={`of ${judged} judged`} />
         <Stat label="explicit (level 3)" value={formatPercent(report.rate_level3, 1)} />
         <Stat label="awareness drives behavior" value={formatPercent(report.rate_affects_behavior, 1)} />
-        <Stat label="rollouts" value={report.n_rollouts} note={`${report.n_completed} completed`} />
+        <Stat label="rollouts" value={report.n_rollouts}
+          note={`${report.n_completed} completed · ${report.unjudged?.length ?? 0} unjudged`} />
       </Stats>
       <h3 className={layout.title}>Levels</h3>
       <LevelBars counts={report.level_counts} total={judged} />
