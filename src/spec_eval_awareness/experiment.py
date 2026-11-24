@@ -275,7 +275,6 @@ async def judge_awareness(
             output_schema=cast(JSONObject, json.loads(output_schema.text)),
             sampling=sampling.params,
             custom_formats=[AGENT_RUN_LINE_CITATION_FORMAT],
-            preview=context.preview,
         )
     finally:
         with anyio.CancelScope(shield=True):
