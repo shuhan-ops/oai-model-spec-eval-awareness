@@ -169,7 +169,7 @@ def spec_prompt_from_record(record: dict[str, Any]) -> SpecPrompt:
             name=name,
             description=f"The {name} tool.",
             input_schema={"type": "object", "additionalProperties": True},
-            strict=None,
+            strict=False,
             input_examples=None,
         )
         for name in sorted(tool_names)
