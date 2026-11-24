@@ -1,0 +1,40 @@
+.levels {
+  display: grid;
+  gap: 4px;
+  max-width: 640px;
+}
+
+.levelRow {
+  display: grid;
+  grid-template-columns: 120px 1fr 120px;
+  align-items: center;
+  gap: 8px;
+}
+
+.levelName {
+  color: var(--fg-dim);
+}
+
+.track {
+  height: 10px;
+  background: var(--line-soft);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.bar {
+  display: block;
+  height: 100%;
+  background: var(--fg-faint);
+}
+
+.quote {
+  white-space: normal;
+  font-style: italic;
+}
+
+.links {
+  display: inline-flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}

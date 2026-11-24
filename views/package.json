@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "fxtr-view": "link:./vendor/fxtr/packages/fxtr-view",
-    "fxtr-view-kit": "link:./vendor/fxtr/packages/fxtr-view-kit"
+    "fxtr-view-kit": "link:./vendor/fxtr/packages/fxtr-view-kit",
+    "fxtr-view-behaviors": "link:./vendor/fxtr/packages/fxtr-view-behaviors"
   },
   "devDependencies": {
     "fxtr-view-bundle": "link:./vendor/fxtr/packages/fxtr-view-bundle",

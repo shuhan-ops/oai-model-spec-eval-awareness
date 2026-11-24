@@ -11,6 +11,9 @@ importers:
       fxtr-view:
         specifier: link:./vendor/fxtr/packages/fxtr-view
         version: link:vendor/fxtr/packages/fxtr-view
+      fxtr-view-behaviors:
+        specifier: link:./vendor/fxtr/packages/fxtr-view-behaviors
+        version: link:vendor/fxtr/packages/fxtr-view-behaviors
       fxtr-view-kit:
         specifier: link:./vendor/fxtr/packages/fxtr-view-kit
         version: link:vendor/fxtr/packages/fxtr-view-kit
