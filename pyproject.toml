@@ -30,8 +30,15 @@ packages = ["src/spec_eval_awareness"]
 # The modules whose import registers the project's steps and workflows: what a process with no
 # script of its own (a resume, the CLI, the viewer) imports.
 modules = ["spec_eval_awareness.experiment", "spec_eval_awareness.compliance"]
+default_remote = "hub"
 
 [tool.fxtr.views]
 # The project's renderer package (views/): `fxtr views build` builds it into views/dist, which the
 # viewer serves.
 package = "views"
+
+[tool.fxtr.remotes.hub]
+kind = "hub"
+url = "https://hub.transluce.org"
+project = "c7871519-ab09-4b69-a272-cf1555bedcf1"
+
