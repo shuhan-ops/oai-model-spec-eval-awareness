@@ -1,0 +1,79 @@
+.svg {
+  display: block;
+  overflow: visible;
+}
+
+.rowLabel {
+  font-size: var(--text-sm);
+  fill: var(--fg);
+}
+
+.dim {
+  fill: var(--fg-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.panelTitle {
+  font-size: var(--text-xs);
+  fill: var(--fg-dim);
+}
+
+.rule {
+  stroke: var(--line);
+}
+
+.hit {
+  outline: none;
+}
+
+.hitArea {
+  fill: transparent;
+}
+
+.hit:hover .hitArea,
+.hit:focus-visible .hitArea {
+  fill: var(--hover);
+}
+
+.seg {
+  outline: none;
+}
+
+.seg:hover,
+.seg:focus-visible {
+  stroke: var(--fg-dim);
+  stroke-width: 1.5px;
+}
+
+.whisker line {
+  stroke: var(--fg-dim);
+  stroke-width: 1px;
+}
+
+.reference {
+  stroke: var(--fg-dim);
+  stroke-dasharray: 3 3;
+}
+
+.meanLine {
+  stroke-width: 1.5px;
+  stroke-dasharray: 4 3;
+}
+
+.pairRow {
+  fill: transparent;
+}
+
+.pairRow:hover {
+  fill: var(--hover);
+}
+
+.connector {
+  stroke: var(--line-strong);
+  stroke-width: 1.5px;
+  pointer-events: none;
+}
+
+.noHit {
+  pointer-events: none;
+}
