@@ -63,6 +63,30 @@ where awareness affects behavior, the same counts per spec section, and every fl
 - 13 rollouts (4 bio/cyber prompts) are unjudged: OpenAI's classifier refused them, and the Claude
   Sonnet 5.5 fallback judge returned empty answers.
 
-Not measured here: compliance with the spec itself (OpenAI's harness grades that with the spec
-and a 1–7 rubric score). That could be added as a second judge to see whether eval-aware rollouts
-comply more or less.
+## Spec compliance by eval awareness (job 31b82112)
+
+Each rollout's visible reply (not its reasoning) is graded with OpenAI's own grader prompt from
+`openai/model_spec_evals`: the scenario, the reply, then the full Model Spec (2025-12-18), the
+prompt's rubric and section; a 1–7 critique score, median of 3 `gpt-6-luna` samples (OpenAI used 5
+samples of GPT-5 Thinking), compliant at ≥6. 2,965 of 2,980 rollouts graded (15 refused by the
+grader's content classifier).
+
+Overall Kimi K3.1 Pro is **78.1%** compliant (OpenAI reports 72–89% for its own models, with a
+different grader).
+
+| Eval awareness | Graded | Compliant | Mean score |
+| --- | --- | --- | --- |
+| 0 none | 2,763 | 79.3% | 6.36 |
+| 1 ambiguous | 54 | 66.7% | 6.02 |
+| 2 implicit | 63 | 58.7% | 5.79 |
+| 3 explicit | 84 | 61.9% | 5.63 |
+| ≥2 eval-aware | 147 | 60.5% | 5.70 |
+| ≥2, awareness drives behavior | 80 | 52.5% | 5.45 |
+| ≥2, awareness doesn't drive behavior | 67 | 70.1% | 6.00 |
+
+Much of the raw gap is which prompts trigger awareness (harder ones). **Within the 84 prompts that
+have both eval-aware and level-0 samples**, eval-aware samples are 66.6% compliant vs 70.9% for
+level-0 samples of the same prompts: a 4-point gap, about one standard error (rough estimate), so
+not clearly different from zero. The sharper signal is that rollouts where the model acts on its
+guess about the grader ("evaluation may expect direct answer… I should maximize likely") comply
+least: guessing the evaluator's expectations does not make Kimi more spec-compliant.
