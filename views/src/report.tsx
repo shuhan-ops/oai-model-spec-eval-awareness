@@ -9,7 +9,7 @@ import {
 } from "fxtr-view";
 import { DataTable, Kind, Stat, Stats, formatNumber, formatPercent, formatSigned, layout, sequentialFill, type TableColumn } from "fxtr-view-kit";
 import styles from "./report.module.css";
-import { ComplianceByAwarenessChart, PairedChart, SectionChart, pairedSummary, type GroupData, type PairedData } from "./charts";
+import { ComplianceByAwarenessChart, SectionChart, pairedSummary, type GroupData, type PairedData } from "./charts";
 
 export const AWARENESS_REPORT = "local.spec_eval_awareness.AwarenessReport.v1";
 export const FLAGGED_ROLLOUT = "local.spec_eval_awareness.FlaggedRollout.v1";
@@ -26,6 +26,7 @@ interface Flagged {
   readonly judgment: EntityID;
   readonly rollout: EntityID;
   readonly compliance?: number | null;
+  readonly grades?: readonly EntityID[];
 }
 
 interface SectionStats {
@@ -91,7 +92,11 @@ const FLAGGED_COLUMNS: readonly TableColumn<Flagged>[] = [
   { key: "section", label: "section", value: (f) => f.top_level_section, width: 130 },
   { key: "where", label: "where", value: (f) => f.location, width: 84 },
   { key: "affects", label: "drives behavior", value: (f) => (f.affects_behavior ? "yes" : "no"), width: 110 },
-  { key: "comp", label: "compliance", value: (f) => f.compliance ?? null, numeric: true, width: 90 },
+  { key: "comp", label: "compliance (median)", value: (f) => f.compliance ?? null, numeric: true, width: 130,
+    cell: (f) => formatNumber(f.compliance ?? null, 0) },
+  { key: "grades", label: "grader critiques", width: 330, cell: (f) => (
+    <span className={styles.links}>{(f.grades ?? []).map((g) => <EntityLink key={String(g)} id={g} />)}</span>
+  ) },
   { key: "quote", label: "evidence", value: (f) => f.quote, cell: (f) => <span className={styles.quote}>{f.quote}</span> },
   { key: "links", label: "open", width: 190, cell: (f) => (
     <span className={styles.links}><EntityLink id={f.rollout} /> <EntityLink id={f.judgment} /></span>
@@ -137,15 +142,21 @@ export function ReportView({ report }: { report: ReportData }) {
         </>
       )}
 
-      {pairs.length > 0 && paired && (
+      {paired && (
         <>
           <h3 className={layout.subtitle}>same prompt, aware vs not</h3>
+          <Stats>
+            <Stat label="level-0 samples" value={formatPercent(paired.unaware, 1)} note="compliant" />
+            <Stat label="eval-aware samples" value={formatPercent(paired.aware, 1)} note="compliant" />
+            <Stat label="gap" value={`${formatSigned(100 * paired.mean, 1)} pts`}
+              note={`95% interval ${formatSigned(100 * (paired.mean - 1.96 * paired.se), 1)} to ${formatSigned(100 * (paired.mean + 1.96 * paired.se), 1)}`} />
+          </Stats>
           <p className={layout.muted}>
-            {formatNumber(paired.n)} prompts with both eval-aware and level-0 samples, one row each, sorted by the gap.
-            Mean gap {formatSigned(100 * paired.mean, 1)} points (95% interval {formatSigned(100 * (paired.mean - 1.96 * paired.se), 1)} to
-            {" "}{formatSigned(100 * (paired.mean + 1.96 * paired.se), 1)}). Press a row to open its prompt.
+            Each prompt was run 5 times. In {formatNumber(paired.n)} prompts, some runs were eval-aware (level 2–3) and
+            others showed no awareness (level 0). Comparing runs of the same prompt removes the effect of harder prompts
+            triggering awareness more often: within a prompt, the runs that noticed the evaluation complied less often
+            than the runs that didn't. Each prompt counts equally.
           </p>
-          <PairedChart pairs={pairs} />
         </>
       )}
 

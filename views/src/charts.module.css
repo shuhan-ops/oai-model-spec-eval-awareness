@@ -54,26 +54,3 @@
   stroke: var(--fg-dim);
   stroke-dasharray: 3 3;
 }
-
-.meanLine {
-  stroke-width: 1.5px;
-  stroke-dasharray: 4 3;
-}
-
-.pairRow {
-  fill: transparent;
-}
-
-.pairRow:hover {
-  fill: var(--hover);
-}
-
-.connector {
-  stroke: var(--line-strong);
-  stroke-width: 1.5px;
-  pointer-events: none;
-}
-
-.noHit {
-  pointer-events: none;
-}

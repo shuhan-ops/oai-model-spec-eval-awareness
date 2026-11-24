@@ -7,6 +7,7 @@ import {
   FLAGGED_ROLLOUT, FlaggedRolloutInline,
 } from "./report";
 import { SPEC_PROMPT, SpecPromptInline, SpecPromptPanel } from "./prompt";
+import { COMPLIANCE_GRADE, ComplianceGradeInline, ComplianceGradePanel } from "./grade";
 
 const bundle: ViewBundle = {
   renderers: [
@@ -17,6 +18,8 @@ const bundle: ViewBundle = {
     renderer(EntityInlineLink, FLAGGED_ROLLOUT, "spec-eval-awareness.Flagged", FlaggedRolloutInline),
     renderer(EntityPanel, SPEC_PROMPT, "spec-eval-awareness.Prompt", SpecPromptPanel),
     renderer(EntityInlineLink, SPEC_PROMPT, "spec-eval-awareness.Prompt", SpecPromptInline),
+    renderer(EntityPanel, COMPLIANCE_GRADE, "spec-eval-awareness.Grade", ComplianceGradePanel),
+    renderer(EntityInlineLink, COMPLIANCE_GRADE, "spec-eval-awareness.Grade", ComplianceGradeInline),
   ],
 };
 

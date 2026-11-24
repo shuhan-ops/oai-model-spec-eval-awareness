@@ -3,9 +3,9 @@
 // awareness beside compliance per spec section. Drawn as SVG at the frame's measured width.
 
 import { useState, type ReactNode } from "react";
-import { useEntityLinks, type EntityID } from "fxtr-view";
+import type { EntityID } from "fxtr-view";
 import {
-  ChartFrame, Legend, ScaleLegend, divergingFill, formatNumber, formatPercent, layout, pressable, seriesColor,
+  ChartFrame, ScaleLegend, divergingFill, formatNumber, formatPercent, layout, seriesColor,
   type ChartTooltip,
 } from "fxtr-view-kit";
 import styles from "./charts.module.css";
@@ -258,88 +258,6 @@ export function pairedSummary(pairs: readonly PairedData[]) {
   const aware = pairs.reduce((a, p) => a + p.k_aware / p.n_aware, 0) / n;
   const unaware = pairs.reduce((a, p) => a + p.k_unaware / p.n_unaware, 0) / n;
   return { n, mean, se: sd / Math.sqrt(n), aware, unaware };
-}
-
-const PAIR_ROW = 8;
-const AWARE = seriesColor(1);
-const UNAWARE = seriesColor(0);
-
-export function PairedChart({ pairs }: { pairs: readonly PairedData[] }) {
-  const links = useEntityLinks();
-  const [tooltip, setTooltip] = useState<ChartTooltip | null>(null);
-  const summary = pairedSummary(pairs);
-  const rows = [...pairs].sort((a, b) => {
-    const da = a.k_aware / a.n_aware - a.k_unaware / a.n_unaware;
-    const db = b.k_aware / b.n_aware - b.k_unaware / b.n_unaware;
-    return da - db || a.k_unaware / a.n_unaware - b.k_unaware / b.n_unaware || a.prompt_id.localeCompare(b.prompt_id);
-  });
-  const height = TOP + rows.length * PAIR_ROW + AXIS;
-  return (
-    <>
-      <Legend items={[
-        { label: "level-0 samples", color: UNAWARE, shape: "circle" },
-        { label: "eval-aware samples (level ≥2)", color: AWARE, shape: "circle" },
-      ]} />
-      <ChartFrame label="compliance of eval-aware and level-0 samples of the same prompt" tooltip={tooltip} fallbackWidth={720}>
-        {(width) => {
-          const left = 8;
-          const right = 8;
-          const w = width - left - right;
-          const x = (v: number) => left + v * w;
-          const bottom = TOP + rows.length * PAIR_ROW;
-          return (
-            <svg width={width} height={height} className={styles.svg}>
-              <g className={layout.grid}>
-                {[0, 0.25, 0.5, 0.75, 1].map((t) => <line key={t} x1={x(t)} x2={x(t)} y1={TOP} y2={bottom} />)}
-              </g>
-              {summary && (
-                <>
-                  <line x1={x(summary.unaware)} x2={x(summary.unaware)} y1={TOP - 6} y2={bottom} className={styles.meanLine} style={{ stroke: UNAWARE }} />
-                  <line x1={x(summary.aware)} x2={x(summary.aware)} y1={TOP - 6} y2={bottom} className={styles.meanLine} style={{ stroke: AWARE }} />
-                  <text x={x(Math.min(summary.aware, summary.unaware)) - 4} y={10} textAnchor="end" className={layout.chartLabel}>
-                    prompt means
-                  </text>
-                </>
-              )}
-              {rows.map((p, i) => {
-                const a = p.k_aware / p.n_aware;
-                const u = p.k_unaware / p.n_unaware;
-                const yc = TOP + i * PAIR_ROW + PAIR_ROW / 2;
-                const label = `${p.section} · ${p.prompt_id.slice(0, 8)}: eval-aware ${p.k_aware}/${p.n_aware}, level-0 ${p.k_unaware}/${p.n_unaware} compliant`;
-                const content = tip(
-                  `${p.section} · ${p.prompt_id.slice(0, 8)}`,
-                  `eval-aware: ${p.k_aware} of ${p.n_aware} compliant`,
-                  `level-0: ${p.k_unaware} of ${p.n_unaware} compliant`,
-                  "press to open the prompt",
-                );
-                const show = () => setTooltip({ x: x(Math.max(a, u)), y: yc - PAIR_ROW, content });
-                return (
-                  <g key={p.prompt_id}>
-                    <rect x={0} y={yc - PAIR_ROW / 2} width={width} height={PAIR_ROW} className={`${layout.mark} ${styles.pairRow}`}
-                      data-open={links.isOpen(p.prompt)}
-                      onPointerEnter={show} onPointerLeave={() => setTooltip(null)} onFocus={show} onBlur={() => setTooltip(null)}
-                      {...pressable(() => links.open(p.prompt), label)} />
-                    <line x1={x(u)} x2={x(a)} y1={yc} y2={yc} className={styles.connector} />
-                    <circle cx={x(u)} cy={yc} r={3} style={{ fill: UNAWARE }} className={styles.noHit} />
-                    <circle cx={x(a)} cy={yc} r={3} style={{ fill: AWARE }} className={styles.noHit} />
-                  </g>
-                );
-              })}
-              <g className={layout.axis} transform={`translate(0,${bottom})`}>
-                <line x1={x(0)} x2={x(1)} />
-                {[0, 0.25, 0.5, 0.75, 1].map((t) => (
-                  <g key={t} transform={`translate(${x(t)},0)`}>
-                    <line y2={4} />
-                    <text y={14} textAnchor="middle">{formatPercent(t)}</text>
-                  </g>
-                ))}
-              </g>
-            </svg>
-          );
-        }}
-      </ChartFrame>
-    </>
-  );
 }
 
 // ---------------------------------------------------------------------------------------------
