@@ -76,6 +76,7 @@ async def main(args: argparse.Namespace) -> None:
             ),
         }
         result = await run_job(client, experiment, inputs, root="spec-eval-awareness-v1")
+        print("report id:", result.item())
         report = await client.load(result.item(), as_type=AwarenessReport)
         print(
             f"rollouts={report.n_rollouts} completed={report.n_completed} judged={report.n_judged} "
