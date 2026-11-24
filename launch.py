@@ -79,7 +79,7 @@ async def main(args: argparse.Namespace) -> None:
         print("report id:", result.item())
         report = await client.load(result.item(), as_type=AwarenessReport)
         print(
-            f"rollouts={report.n_rollouts} completed={report.n_completed} judged={report.n_judged} "
+            f"rollouts={report.n_rollouts} completed={report.n_completed} judged={report.n_judged} (fallback {report.n_judged_by_fallback}) "
             f"levels={report.level_counts} rate>=2={report.rate_level_ge2:.3f} "
             f"rate3={report.rate_level3:.3f} affects={report.rate_affects_behavior:.3f}"
         )
