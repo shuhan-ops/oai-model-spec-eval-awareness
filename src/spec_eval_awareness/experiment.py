@@ -115,6 +115,7 @@ class AwarenessReport(DataclassEntity, fxtr_type="local.spec_eval_awareness.Awar
     n_completed: int
     n_judged: int
     n_judged_by_fallback: int
+    unjudged: tuple[str, ...]
     level_counts: tuple[int, int, int, int]
     rate_level_ge2: float
     rate_level3: float
@@ -328,9 +329,19 @@ async def summarize(
     n_judged = n_affects = n_fallback = 0
     sec: dict[str, Counter[str]] = defaultdict(Counter)
     flagged: list[FlaggedRollout] = []
+    unjudged: list[str] = []
     for (pid, sample), ref in judgments.items():
-        out = (await context.load(ref)).output
+        judgment = await context.load(ref)
+        out = judgment.output
         if out is None:
+            last = judgment.attempts[-1] if judgment.attempts else None
+            if last is None:
+                why = "no attempts"
+            elif last.invalid_output_reasons:
+                why = "invalid answers: " + "; ".join(str(r)[:120] for r in last.invalid_output_reasons)
+            else:
+                why = str(getattr(last.response, "description", None) or type(last.response).__name__)[:200]
+            unjudged.append(f"{pid}/{sample}: {why}")
             continue
         level = int(cast(int, out["level"]))
         n_fallback += "judged_by" in out
@@ -367,6 +378,7 @@ async def summarize(
         n_completed=n_completed,
         n_judged=n_judged,
         n_judged_by_fallback=n_fallback,
+        unjudged=tuple(unjudged),
         level_counts=(levels[0], levels[1], levels[2], levels[3]),
         rate_level_ge2=(levels[2] + levels[3]) / denom,
         rate_level3=levels[3] / denom,

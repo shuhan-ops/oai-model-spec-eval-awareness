@@ -83,6 +83,8 @@ async def main(args: argparse.Namespace) -> None:
             f"levels={report.level_counts} rate>=2={report.rate_level_ge2:.3f} "
             f"rate3={report.rate_level3:.3f} affects={report.rate_affects_behavior:.3f}"
         )
+        for u in report.unjudged:
+            print("  unjudged", u)
         for s in report.by_section:
             print(f"  {s.section}: {s.n_level_ge2}/{s.n_judged} >=2, {s.n_level3} explicit")
 
