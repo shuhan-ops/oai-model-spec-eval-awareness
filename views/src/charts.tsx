@@ -257,7 +257,9 @@ export function pairedSummary(pairs: readonly PairedData[]) {
   const sd = n > 1 ? Math.sqrt(diffs.reduce((a, d) => a + (d - mean) ** 2, 0) / (n - 1)) : 0;
   const aware = pairs.reduce((a, p) => a + p.k_aware / p.n_aware, 0) / n;
   const unaware = pairs.reduce((a, p) => a + p.k_unaware / p.n_unaware, 0) / n;
-  return { n, mean, se: sd / Math.sqrt(n), aware, unaware };
+  const worse = diffs.filter((d) => d < 0).length;
+  const better = diffs.filter((d) => d > 0).length;
+  return { n, mean, se: sd / Math.sqrt(n), aware, unaware, worse, better, tied: n - worse - better };
 }
 
 // ---------------------------------------------------------------------------------------------

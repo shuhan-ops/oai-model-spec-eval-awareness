@@ -154,8 +154,9 @@ export function ReportView({ report }: { report: ReportData }) {
           <p className={layout.muted}>
             Each prompt was run 5 times. In {formatNumber(paired.n)} prompts, some runs were eval-aware (level 2–3) and
             others showed no awareness (level 0). Comparing runs of the same prompt removes the effect of harder prompts
-            triggering awareness more often: within a prompt, the runs that noticed the evaluation complied less often
-            than the runs that didn't. Each prompt counts equally.
+            triggering awareness more often. Within a prompt, the eval-aware runs complied less often on average, but the
+            interval includes zero: the eval-aware runs did worse in {formatNumber(paired.worse)} prompts, better
+            in {formatNumber(paired.better)}, and the same in {formatNumber(paired.tied)}. Each prompt counts equally.
           </p>
         </>
       )}
