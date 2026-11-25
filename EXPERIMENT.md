@@ -219,3 +219,13 @@ say so. DeepSeek, the weaker model, voices awareness a fifth as often as Kimi bu
 nearly as well when asked, so the gap in voiced rates is about verbalizing, not recognizing.
 Caveat: being asked plants the question; this shows the cues are recognizable to the model, not
 that it thinks about them unprompted while answering.
+
+## Grading cost
+
+Nearly all of a subject run's cost (~$55) is the compliance grader: OpenAI's template puts the full
+Model Spec (~68k tokens) in every call, and the earlier runs graded each rollout 3 times. From the
+DeepSeek eval-marker run on, `launch.py` grades each rollout **once** by default (pass
+`--grader-samples 3` to reproduce the earlier runs and reuse their cache); compliance is that one
+score ≥6 rather than the median of 3. OpenRouter's half-price `gpt-6-luna:batch` was tried and
+dropped: it only works through OpenRouter's batch API, which behaviors does not support. The eval
+awareness judge costs about $2–4 per run and is unchanged.
