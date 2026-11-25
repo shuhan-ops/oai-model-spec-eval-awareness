@@ -534,6 +534,7 @@ async def summarize(
 async def experiment(
     context: WorkflowContext,
     prompts: Annotated[ArrayHandle[BoundID[SpecPrompt]], "[prompt_id: str]"],
+    grading_prompts: Annotated[ArrayHandle[BoundID[SpecPrompt]], "[prompt_id: str]"],
     n_samples: int,
     subject_model: ScalarHandle[str],
     subject_sampling: ScalarHandle[BoundID[SamplingParamsEntity]],
@@ -549,7 +550,11 @@ async def experiment(
     model_spec: ScalarHandle[BoundID[TextEntity]],
     critique_schema: ScalarHandle[BoundID[TextEntity]],
 ) -> ScalarHandle[BoundID[AwarenessReport]]:
-    """Sample the subject on every Model Spec prompt, judge each CoT for eval awareness, grade compliance."""
+    """Sample the subject on every Model Spec prompt, judge each CoT for eval awareness, grade compliance.
+
+    `grading_prompts` are the prompts the compliance grader sees: the same as `prompts`, except
+    when the subject's prompts were altered (an eval marker added), where they are the originals.
+    """
     rollouts = context.run_step(
         "rollouts",
         rollout_prompt,
@@ -582,7 +587,7 @@ async def experiment(
             "grader_template": grader_template,
             "model_spec": model_spec,
             "critique_schema": critique_schema,
-            "prompt": prompts,
+            "prompt": grading_prompts,
             "rollout": rollouts,
         },
         map_over=["prompt_id", "sample"],
