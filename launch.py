@@ -37,7 +37,10 @@ SUBJECT_MODELS = {
 # Each subject's job root. Kimi keeps its original root so its cached results stay addressable.
 ROOTS = {"kimi": "spec-eval-awareness-v1", "deepseek-flash": "spec-eval-awareness-deepseek-v4.1-flash"}
 JUDGE_MODEL = "openrouter/openai/gpt-6-luna"
-GRADER_MODEL = "openrouter/openai/gpt-6-luna"
+GRADER_MODEL = "openrouter/openai/gpt-6-luna:batch"
+"""OpenRouter's half-price, slower variant. The runs before 2026-11-24's eval-marker run used
+`openrouter/openai/gpt-6-luna` with 3 grader samples; pass --grader-model and --grader-samples 3
+to reproduce (and reuse the cache of) those."""
 DATA = Path(__file__).parent / "data"
 
 EVAL_MARKER = (
@@ -106,7 +109,7 @@ async def main(args: argparse.Namespace) -> None:
             ),
             "rubric": Array.scalar(await client.store(TextEntity(text=RUBRICS[args.rubric])), BoundID[TextEntity]),
             "n_grader_samples": Array.scalar(args.grader_samples, int),
-            "grader_model": Array.scalar(GRADER_MODEL, str),
+            "grader_model": Array.scalar(args.grader_model, str),
             "grader_sampling": Array.scalar(grader_sampling, BoundID[SamplingParamsEntity]),
             "grader_template": Array.scalar(
                 await client.store(TextEntity(text=(DATA / "grader_prompt_template.md").read_text())),
@@ -146,7 +149,8 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", required=True)
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--samples", type=int, default=1)
-    parser.add_argument("--grader-samples", type=int, default=3)
+    parser.add_argument("--grader-samples", type=int, default=1)
+    parser.add_argument("--grader-model", default=GRADER_MODEL)
     parser.add_argument("--concurrency", type=int, default=64)
     parser.add_argument("--eval-marker", action="store_true", help="tell the subject the conversation is an evaluation")
     parser.add_argument("--subject", choices=sorted(SUBJECT_MODELS), default="kimi")
