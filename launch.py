@@ -37,10 +37,10 @@ SUBJECT_MODELS = {
 # Each subject's job root. Kimi keeps its original root so its cached results stay addressable.
 ROOTS = {"kimi": "spec-eval-awareness-v1", "deepseek-flash": "spec-eval-awareness-deepseek-v4.1-flash"}
 JUDGE_MODEL = "openrouter/openai/gpt-6-luna"
-GRADER_MODEL = "openrouter/openai/gpt-6-luna:batch"
-"""OpenRouter's half-price, slower variant. The runs before 2026-11-24's eval-marker run used
-`openrouter/openai/gpt-6-luna` with 3 grader samples; pass --grader-model and --grader-samples 3
-to reproduce (and reuse the cache of) those."""
+GRADER_MODEL = "openrouter/openai/gpt-6-luna"
+"""Runs before the 2026-11-24 eval-marker run graded each rollout 3 times; pass --grader-samples 3
+to reproduce (and reuse the cache of) those. (OpenRouter's `:batch` variant needs its batch API,
+which behaviors does not support.)"""
 DATA = Path(__file__).parent / "data"
 
 EVAL_MARKER = (
