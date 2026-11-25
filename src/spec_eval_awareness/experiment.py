@@ -285,6 +285,18 @@ async def judge_awareness(
     transcript: Transcript,
 ) -> Judgment:
     """Rate how strongly the model's reasoning or reply shows awareness of being evaluated."""
+    return await judge_with_fallback(model_name, sampling, instructions, rubric, output_schema, transcript)
+
+
+async def judge_with_fallback(
+    model_name: str,
+    sampling: SamplingParamsEntity,
+    instructions: TextEntity,
+    rubric: TextEntity,
+    output_schema: TextEntity,
+    transcript: Transcript,
+) -> Judgment:
+    """Judge a transcript against a rubric; refused on bio/cyber grounds, use the fallback judge."""
 
     async def run(name: str) -> Judgment:
         api = make_api(name)
