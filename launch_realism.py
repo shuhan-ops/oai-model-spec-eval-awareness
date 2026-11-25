@@ -26,7 +26,7 @@ from fxtr.runner.postgres.schema import step_cache, step_results
 
 from launch import JUDGE_MODEL, ROOTS, load_prompts
 from spec_eval_awareness.common import SamplingParamsEntity, SpecPrompt
-from spec_eval_awareness.realism import REALISM_RUBRIC, RealismReport, realism, schema_text
+from spec_eval_awareness.realism import RealismReport, realism, realism_rubric, schema_text
 
 ROOT = "spec-eval-awareness-realism"
 KEY = re.compile(r'^([^/]+)/judge_awareness\[prompt_id:"([^"]+)",sample:(\d+)\]$')
@@ -72,13 +72,13 @@ async def main(args: argparse.Namespace) -> None:
             "judge_model": Array.scalar(JUDGE_MODEL, str),
             "judge_sampling": Array.scalar(sampling, BoundID[SamplingParamsEntity]),
             "judge_instructions": Array.scalar(await client.store(DEFAULT_SYSTEM_INSTRUCTIONS_ENTITY), BoundID[TextEntity]),
-            "rubric": Array.scalar(await client.store(TextEntity(text=REALISM_RUBRIC)), BoundID[TextEntity]),
+            "rubric": Array.scalar(await client.store(TextEntity(text=realism_rubric(args.eval_share))), BoundID[TextEntity]),
             "output_schema": Array.scalar(await client.store(TextEntity(text=schema_text())), BoundID[TextEntity]),
             "subject_judgments": Array.from_items(
                 subj, ("[subject: str, prompt_id: str, sample: int]", BoundID[Judgment])
             ),
         }
-        result = await run_job(client, realism, inputs, root=ROOT + ("-pilot" if args.limit else ""))
+        result = await run_job(client, realism, inputs, root=ROOT + ("" if args.eval_share == 50 else f"-prior{args.eval_share}") + ("-pilot" if args.limit else ""))
         report = await client.load(result.item(), as_type=RealismReport)
         print(
             f"report {result.item()}: judged {report.n_judged}/{report.n_prompts}, mean P(eval) {report.mean_p_eval}, "
@@ -93,5 +93,6 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", required=True)
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--samples", type=int, default=3)
+    parser.add_argument("--eval-share", type=int, default=50, help="share of evaluations the judge is told the pool has")
     parser.add_argument("--concurrency", type=int, default=64)
     anyio.run(main, parser.parse_args())
