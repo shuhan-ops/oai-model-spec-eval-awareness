@@ -52,7 +52,7 @@ export interface RateRow {
   readonly extra?: ReactNode;
 }
 
-type Panel =
+export type Panel =
   | { readonly kind: "rate"; readonly title: string; readonly max: number; readonly color: string; readonly reference?: number; readonly rows: readonly RateRow[] }
   | { readonly kind: "scores"; readonly title: string; readonly rows: readonly RateRow[] };
 
@@ -62,7 +62,7 @@ const TOP = 18;
 const AXIS = 22;
 const GAP = 20;
 
-function RowChart({ label, panels, labelWidth = 200 }: { label: string; panels: readonly Panel[]; labelWidth?: number }) {
+export function RowChart({ label, panels, labelWidth = 200 }: { label: string; panels: readonly Panel[]; labelWidth?: number }) {
   const [tooltip, setTooltip] = useState<ChartTooltip | null>(null);
   const rows = panels[0]?.rows ?? [];
   const height = TOP + rows.length * ROW + AXIS;
