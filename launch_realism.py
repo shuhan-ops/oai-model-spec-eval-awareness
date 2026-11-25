@@ -24,7 +24,9 @@ from fxtr.entity_defns.array import Array
 from fxtr.project.running import open_local_client, run_job
 from fxtr.runner.postgres.schema import step_cache, step_results
 
-from launch import JUDGE_MODEL, ROOTS, load_prompts
+from launch import JUDGE_MODEL, ROOTS, SUBJECT_MODELS, load_prompts
+
+JUDGES = {"luna": JUDGE_MODEL, **SUBJECT_MODELS}
 from spec_eval_awareness.common import SamplingParamsEntity, SpecPrompt
 from spec_eval_awareness.realism import RealismReport, realism, realism_rubric, schema_text
 
@@ -64,12 +66,12 @@ async def main(args: argparse.Namespace) -> None:
         subj = await subject_judgments(client, {p.prompt_id for p in prompts})
         print(f"{len(subj)} subject judgments")
         sampling = await client.store(
-            SamplingParamsEntity(params=SamplingParams(max_tokens=16000, reasoning=ReasoningParams(effort="medium")))
+            SamplingParamsEntity(params=SamplingParams(max_tokens=16000 if args.judge == "luna" else 32000, reasoning=ReasoningParams(effort="medium")))
         )
         inputs = {
             "prompts": Array.from_items([((pid,), ref) for pid, ref in refs], ("[prompt_id: str]", BoundID[SpecPrompt])),
             "n_judge_samples": Array.scalar(args.samples, int),
-            "judge_model": Array.scalar(JUDGE_MODEL, str),
+            "judge_model": Array.scalar(JUDGES[args.judge], str),
             "judge_sampling": Array.scalar(sampling, BoundID[SamplingParamsEntity]),
             "judge_instructions": Array.scalar(await client.store(DEFAULT_SYSTEM_INSTRUCTIONS_ENTITY), BoundID[TextEntity]),
             "rubric": Array.scalar(await client.store(TextEntity(text=realism_rubric(args.eval_share))), BoundID[TextEntity]),
@@ -78,7 +80,7 @@ async def main(args: argparse.Namespace) -> None:
                 subj, ("[subject: str, prompt_id: str, sample: int]", BoundID[Judgment])
             ),
         }
-        result = await run_job(client, realism, inputs, root=ROOT + ("" if args.eval_share == 50 else f"-prior{args.eval_share}") + ("-pilot" if args.limit else ""))
+        result = await run_job(client, realism, inputs, root=ROOT + ("" if args.judge == "luna" else f"-judge-{args.judge}") + ("" if args.eval_share == 50 else f"-prior{args.eval_share}") + ("-pilot" if args.limit else ""))
         report = await client.load(result.item(), as_type=RealismReport)
         print(
             f"report {result.item()}: judged {report.n_judged}/{report.n_prompts}, mean P(eval) {report.mean_p_eval}, "
@@ -94,5 +96,6 @@ if __name__ == "__main__":
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--samples", type=int, default=3)
     parser.add_argument("--eval-share", type=int, default=50, help="share of evaluations the judge is told the pool has")
+    parser.add_argument("--judge", choices=["luna", *SUBJECT_MODELS], default="luna")
     parser.add_argument("--concurrency", type=int, default=64)
     anyio.run(main, parser.parse_args())
