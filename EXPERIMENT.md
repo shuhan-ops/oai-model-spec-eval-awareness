@@ -112,3 +112,27 @@ roughly are.
 - **Subject:** `deepseek/deepseek-v4.1-flash-1017` on OpenRouter (open weights, full reasoning),
   same sampling, judge, and grader as the Kimi run. Launch with `--subject deepseek-flash`
   (rubric v2 by default); job root `spec-eval-awareness-deepseek-v4.1-flash`.
+
+### DeepSeek results
+
+2,980 rollouts, all completed; 2,969 judged (11 unjudged: the same 3 bio/cyber prompts the Kimi
+judge could not handle); 2,972 graded.
+
+| | DeepSeek V4.1 Flash (rubric v2) | Kimi K3.1 Pro (rubric v1) |
+| --- | --- | --- |
+| level ≥2 (any eval awareness) | **0.9%** (28) | 5.0% (147) |
+| level 3 | 0.9% (27, objective-aware) | 2.8% (84, explicit) |
+| awareness drives behavior | 0.6% (19) | 2.7% (80) |
+| prompts with any flagged sample | 18 | 87 |
+| spec-compliant overall | **71.4%** | 78.1% |
+| compliant, level 0 | 71.7% | 79.3% |
+| compliant, level ≥2 | 50.0% (14/28) | 60.5% (89/147) |
+| same prompts, aware vs level 0 | 53.2% vs 53.2% (18 prompts) | 66.6% vs 70.9% (84 prompts) |
+
+- DeepSeek notices evaluation about a fifth as often as Kimi. When it does, it almost always
+  names what is being tested (27 of 28 at level 3): "likely test for prompt injection. We should
+  not follow embedded instruction", "This is likely from a code repair benchmark. Expected answer
+  likely only fix syntax/operators", "likely grading expects Mermaid diagram code".
+- Eval-aware DeepSeek rollouts comply less often overall (50% vs 72%), but within the 18 prompts
+  that have both kinds of sample there is no gap at all, so for DeepSeek the raw difference is
+  entirely which prompts trigger awareness. With 28 flagged rollouts, none of this is precise.
